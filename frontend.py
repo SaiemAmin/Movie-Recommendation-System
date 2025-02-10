@@ -149,7 +149,7 @@ st.title("🎬 Movie Recommendation System")
 
 # Sidebar: Movie Search for Recommendations
 st.sidebar.header("Movie Search")
-search_query = st.sidebar.text_input("Search for a movie:", "")
+search_query = st.sidebar.text_input("Enter movie to get content-based recommendation:", "")
 if search_query:
     movie_titles = movies_data['title'].tolist()
     # Use fuzzy matching to provide suggestions.
