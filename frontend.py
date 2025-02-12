@@ -1,71 +1,120 @@
+import sys
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 from fuzzywuzzy import process
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.feature_extraction.text import TfidfVectorizer
+import numpy as np
+import plotly.express as px
 
-# --- PAGE CONFIGURATION ---
-st.set_page_config(page_title="Movie Recommender", layout="wide")
+# ----------------- Page Configuration -----------------
+st.set_page_config(page_title="Movie Recommendation System", layout="wide")
 
-# Initialize session state for selected movie details
-if "selected_movie" not in st.session_state:
-    st.session_state.selected_movie = None
+# ----------------- Custom CSS for Netflix-Inspired Theme & Enhanced Sidebar -----------------
+st.markdown(
+    """
+    <style>
+    /* Overall app styling */
+    body {
+        background-color: #000000;
+        color: #E50914;
+    }
+    .stApp {
+        background-color: #000000;
+    }
+    /* Headings */
+    h1, h2, h3, h4, h5, h6 {
+        color: #E50914;
+    }
+    /* Movie cards styling */
+    .card {
+        background-color: #212121;
+        padding: 10px;
+        border-radius: 10px;
+        margin: 10px;
+        text-align: center;
+    }
+    /* Button styling */
+    .stButton button {
+        background-color: #E50914;
+        color: #ffffff;
+        border: none;
+        border-radius: 5px;
+        padding: 5px 10px;
+    }
+    /* Enhanced sidebar styling */
+    [data-testid="stSidebar"] {
+        background: linear-gradient(135deg, #141414, #000000) !important;
+        color: #E50914;
+        font-family: 'Helvetica Neue', sans-serif;
+        padding: 20px;
+    }
+    /* Sidebar header text */
+    [data-testid="stSidebar"] .css-1d391kg {
+        font-size: 18px;
+        font-weight: bold;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
 
-# --- DATA LOADING ---
+# ----------------- OS-Based Dimension Settings -----------------
+if sys.platform == 'win32':
+    MATPLOTLIB_FIGSIZE = (8, 6)
+    MATPLOTLIB_DPI = 120
+    PLOTLY_WIDTH = 600
+    PLOTLY_HEIGHT = 400
+else:
+    MATPLOTLIB_FIGSIZE = (4, 3)
+    MATPLOTLIB_DPI = 80
+    PLOTLY_WIDTH = 400
+    PLOTLY_HEIGHT = 250
+
+plt.rcParams.update({'figure.figsize': MATPLOTLIB_FIGSIZE, 'figure.dpi': MATPLOTLIB_DPI})
+
+# ----------------- Data Loading Function -----------------
 @st.cache_data
 def load_data():
     movies = pd.read_csv('movies.csv')
-    
-    # Ensure required columns exist.
     required_cols = [
-        'title', 'overview', 'genres', 'director', 
+        'title', 'overview', 'genres', 'director',
         'poster_path', 'vote_average', 'vote_count', 'release_date'
     ]
     for col in required_cols:
         if col not in movies.columns:
             movies[col] = ''
-    
-    # Combine text features for content-based filtering.
     movies['combined_features'] = (
         movies['overview'].fillna('') + ' ' +
         movies['genres'].fillna('') + ' ' +
         movies['director'].fillna('')
     )
-    
-    # Drop duplicate movies (based on title) and reset the index.
     movies = movies.drop_duplicates(subset='title').reset_index(drop=True)
     return movies
 
 movies_data = load_data()
 
-# --- COMPUTE COSINE SIMILARITY ---
+# ----------------- Compute TF-IDF and Cosine Similarity -----------------
 @st.cache_data
-def compute_similarity(data):
+def compute_tfidf_and_similarity(data):
     tfidf = TfidfVectorizer(stop_words='english')
     tfidf_matrix = tfidf.fit_transform(data['combined_features'])
-    return cosine_similarity(tfidf_matrix, tfidf_matrix)
+    cosine_sim = cosine_similarity(tfidf_matrix, tfidf_matrix)
+    return tfidf, tfidf_matrix, cosine_sim
 
-cosine_sim = compute_similarity(movies_data)
+tfidf, tfidf_matrix, cosine_sim = compute_tfidf_and_similarity(movies_data)
 
-# --- RECOMMENDATION FUNCTION ---
+# ----------------- Recommendation Function -----------------
 def get_similar_movies(title, threshold=0.05, top_n=4):
-    """
-    Returns up to top_n movies similar to the given title using cosine similarity.
-    Excludes the queried movie and ensures unique recommendations.
-    """
     if title not in movies_data['title'].values:
         st.warning(f"'{title}' not found in the dataset.")
         return pd.DataFrame(columns=['title', 'poster_path', 'vote_average'])
-    
     idx = movies_data[movies_data['title'] == title].index[0]
     sim_scores = list(enumerate(cosine_sim[idx]))
     sim_scores = sorted(sim_scores, key=lambda x: x[1], reverse=True)
-    
-    # Exclude the selected movie and any with similarity below the threshold.
     sim_scores = [score for score in sim_scores 
                   if movies_data.iloc[score[0]]['title'] != title and score[1] >= threshold]
-    
     seen = set()
     unique_sim_scores = []
     for i, score in sim_scores:
@@ -78,160 +127,155 @@ def get_similar_movies(title, threshold=0.05, top_n=4):
     movie_indices = [i for i, score in unique_sim_scores]
     return movies_data.iloc[movie_indices][['title', 'poster_path', 'vote_average']]
 
-# --- DISPLAY MOVIES FUNCTION ---
+# ----------------- Display Movies Grid Function (with embedded Details button) -----------------
 def display_movies(movies):
-    """
-    Displays a grid of movies (up to 5 per row) with poster, title, rating,
-    and a Details button. Clicking Details saves the movie title in session state.
-    """
     num_movies = len(movies)
     if num_movies == 0:
         st.write("No movies to display.")
         return
-    
     cols = st.columns(min(num_movies, 5))
     for idx, movie in enumerate(movies.itertuples()):
         with cols[idx % 5]:
+            st.markdown("<div class='card'>", unsafe_allow_html=True)
             if movie.poster_path:
                 st.image(f"https://image.tmdb.org/t/p/w500{movie.poster_path}", width=150)
             else:
                 st.image("https://via.placeholder.com/150", width=150)
-            st.markdown(f"<h4 style='margin-bottom:5px;'>{movie.title}</h4>", unsafe_allow_html=True)
+            st.markdown(f"<h4 style='margin-bottom:2px;'>{movie.title}</h4>", unsafe_allow_html=True)
             st.write(f"🌟 Rating: {movie.vote_average}")
             if st.button("Details", key=f"details_{movie.title}_{idx}"):
                 st.session_state.selected_movie = movie.title
+            st.markdown("</div>", unsafe_allow_html=True)
 
-# --- PLOT SIMILAR MOVIES (for details view) ---
+# ----------------- Plot Similarities using Plotly (Optimized Similarity Plot) -----------------
 def plot_similarities(movie_title):
-    """
-    For a given movie, plots a horizontal bar chart of the top similar movies
-    (excluding the selected movie).
-    """
     idx = movies_data[movies_data['title'] == movie_title].index[0]
     sim_scores = list(enumerate(cosine_sim[idx]))
     sim_scores = sorted(sim_scores, key=lambda x: x[1], reverse=True)
-    # Exclude the selected movie and take the top 4 similar movies.
     sim_scores = [score for score in sim_scores if movies_data.iloc[score[0]]['title'] != movie_title][:4]
     similar_titles = [movies_data.iloc[score[0]]['title'] for score in sim_scores]
     similarities = [score[1] for score in sim_scores]
-    
-    fig, ax = plt.subplots()
-    ax.barh(similar_titles, similarities, color="skyblue")
-    ax.set_xlabel("Similarity Score")
-    ax.set_title("Top Similar Movies")
-    st.pyplot(fig)
+    df = pd.DataFrame({"Title": similar_titles, "Similarity": similarities})
+    fig = px.bar(df, x="Similarity", y="Title", orientation="h", title="Top Similar Movies",
+                 height=PLOTLY_HEIGHT, width=PLOTLY_WIDTH, color_discrete_sequence = ["red"])
+    fig.update_layout(yaxis={'categoryorder': 'total ascending'})
+    st.plotly_chart(fig, use_container_width=True)
 
-# --- DISPLAY MOVIE DETAILS ---
-def display_movie_details(movie):
-    """
-    Displays detailed information for a given movie and shows a plot
-    of similar movies.
-    """
-    st.markdown("### Movie Details")
-    if movie.poster_path:
-        st.image(f"https://image.tmdb.org/t/p/w500{movie.poster_path}", width=200)
-    else:
-        st.image("https://via.placeholder.com/200", width=200)
-    st.markdown(f"**Title:** {movie.title}")
-    st.markdown(f"**Overview:** {movie.overview}")
-    st.markdown(f"**Rating:** {movie.vote_average}")
-    st.markdown(f"**Vote Count:** {movie.vote_count}")
-    st.markdown(f"**Release Date:** {movie.release_date}")
-    st.markdown(f"**Director:** {movie.director}")
-    st.markdown(f"**Genres:** {movie.genres}")
-    
-    st.markdown("#### Similar Movies")
-    plot_similarities(movie.title)
+# ----------------- AI-Style Summary Functions -----------------
+def generate_ai_summary(selected_title):
+    summary = (
+        f"The following movies were chosen because their overview, genres, and directorial style "
+        f"exhibit strong thematic and stylistic similarities with '{selected_title}' in our collection. "
+        f"This commonality suggests that the recommended movies share similar narrative and artistic qualities that might appeal to you."
+    )
+    return summary
 
-# --- MAIN APP LAYOUT ---
+def compute_avg_similarity(selected_title):
+    idx = movies_data[movies_data['title'] == selected_title].index[0]
+    sim_scores = list(enumerate(cosine_sim[idx]))
+    sim_scores = [score for score in sim_scores if movies_data.iloc[score[0]]['title'] != selected_title]
+    avg_sim = np.mean([score for i, score in sim_scores]) if sim_scores else 0
+    return avg_sim
 
-st.title("🎬 Movie Recommendation System")
+def display_summary_explanation(selected_title):
+    summary = generate_ai_summary(selected_title)
+    st.markdown(f"<p style='font-size:16px; line-height:1.5;'>{summary}</p>", unsafe_allow_html=True)
 
-# Sidebar: Movie Search for Recommendations
-st.sidebar.header("Movie Search")
-search_query = st.sidebar.text_input("Enter movie to get content-based recommendation:", "")
-if search_query:
-    movie_titles = movies_data['title'].tolist()
-    # Use fuzzy matching to provide suggestions.
-    matched = process.extract(search_query, movie_titles, limit=10)
-    matched_titles = [match[0] for match in matched]
-    selected_movie = st.sidebar.selectbox("Select a movie:", matched_titles)
-    if selected_movie:
-        movie_row = movies_data[movies_data['title'] == selected_movie]
-        if not movie_row.empty and movie_row['poster_path'].values[0]:
-            st.sidebar.image(f"https://image.tmdb.org/t/p/w500{movie_row['poster_path'].values[0]}")
-        st.markdown(f"## Movies similar to **{selected_movie}**")
-        recommended_movies = get_similar_movies(selected_movie)
-        display_movies(recommended_movies)
+# ----------------- Insights Plots using Plotly -----------------
+def plot_director_votes():
+    director_votes = movies_data.groupby("director")["vote_count"].sum().reset_index()
+    top_directors = director_votes.sort_values(by="vote_count", ascending=False).head(10)
+    fig = px.bar(top_directors, x="vote_count", y="director", orientation="h", color_discrete_sequence= ["red"],
+                 title="Top Directors by Vote Count", height=PLOTLY_HEIGHT, width=PLOTLY_WIDTH)
+    fig.update_yaxes(autorange="reversed")
+    st.plotly_chart(fig, use_container_width=True)
 
-# Navigation Tabs on the Sidebar
-selected_tab = st.sidebar.radio("Navigate", ["Search", "Popular Movies", "Insights"])
+def plot_yearly_votes():
+    movies_data['release_year'] = pd.to_datetime(movies_data['release_date'], errors='coerce').dt.year  
+    yearly_votes = movies_data.groupby("release_year")["vote_count"].sum().reset_index()
+    fig = px.line(yearly_votes, x="release_year", y="vote_count", markers=True, color_discrete_sequence = ["red"],
+                  title="Vote Counts by Year", height=PLOTLY_HEIGHT, width=PLOTLY_WIDTH)
+    st.plotly_chart(fig, use_container_width=True)
 
-if selected_tab == "Search":
-    st.subheader("🔍 Search for a movie")
-    query = st.text_input("Enter movie name:", "")
-    if query:
-        movie_titles = movies_data['title'].tolist()
-        matched = process.extract(query, movie_titles, limit=10)
-        matched_titles = [match[0] for match in matched]
-        filtered_movies = movies_data[movies_data['title'].isin(matched_titles)]
-    else:
-        filtered_movies = movies_data.head(10)
-    display_movies(filtered_movies)
-
-elif selected_tab == "Popular Movies":
-    st.subheader("🔥 Top Rated Movies")
+def plot_top_movies():
     top_movies = movies_data.sort_values(by="vote_average", ascending=False).head(10)
-    display_movies(top_movies)
+    fig = px.bar(top_movies, x="title", y="vote_average", title="Top Movies by Average Vote",
+                 height=PLOTLY_HEIGHT, width=PLOTLY_WIDTH, color_discrete_sequence=["red"])
+    fig.update_xaxes(tickangle=45)
+    st.plotly_chart(fig, use_container_width=True)
 
-elif selected_tab == "Insights":
-    st.subheader("📊 Insights")
-    def plot_director_votes():
-        st.subheader("🎬 Top 10 Directors by Vote Count")
-        director_votes = movies_data.groupby("director")["vote_count"].sum().reset_index()
-        top_directors = director_votes.sort_values(by="vote_count", ascending=False).head(10)
-        fig, ax = plt.subplots(figsize=(10,6))
-        ax.barh(top_directors["director"], top_directors["vote_count"], color="skyblue")
-        ax.set_xlabel("Vote Count")
-        ax.set_ylabel("Director")
-        ax.set_title("Top Directors by Vote Count")
-        plt.gca().invert_yaxis()
-        st.pyplot(fig)
-    
-    def plot_yearly_votes():
-        st.subheader("📈 Vote Counts by Year")
-        movies_data['release_year'] = pd.to_datetime(movies_data['release_date'], errors='coerce').dt.year
-        yearly_votes = movies_data.groupby("release_year")["vote_count"].sum().reset_index()
-        fig, ax = plt.subplots(figsize=(10,5))
-        ax.plot(yearly_votes['release_year'], yearly_votes['vote_count'], marker='o', linestyle='-', color="skyblue")
-        ax.set_title("Vote Counts by Year")
-        ax.set_xlabel("Year")
-        ax.set_ylabel("Vote Count")
-        plt.xticks(rotation=45)
-        st.pyplot(fig)
-    
-    def plot_top_movies():
-        st.subheader("🎬 Top 10 Movies by Average Vote")
-        top_movies = movies_data.sort_values(by="vote_average", ascending=False).head(10)
-        fig, ax = plt.subplots(figsize=(12,6))
-        ax.bar(top_movies["title"], top_movies["vote_average"], color="coral")
-        ax.set_title("Average Vote for Top Movies")
-        ax.set_xlabel("Movie Title")
-        ax.set_ylabel("Average Vote")
-        plt.xticks(rotation=45, ha="right")
-        st.pyplot(fig)
-    
-    plot_director_votes()
-    plot_yearly_votes()
-    plot_top_movies()
+# ----------------- Display Movie Details (Netflix-Inspired Layout) -----------------
+def display_movie_details(movie):
+    st.markdown("## Movie Details")
+    cols = st.columns([1, 2])
+    with cols[0]:
+        if movie.poster_path:
+            st.image(f"https://image.tmdb.org/t/p/w500{movie.poster_path}", width=300)
+        else:
+            st.image("https://via.placeholder.com/300", width=300)
+    with cols[1]:
+        st.markdown(f"<h2>{movie.title}</h2>", unsafe_allow_html=True)
+        st.markdown(f"<p><strong>Overview:</strong> {movie.overview}</p>", unsafe_allow_html=True)
+        st.markdown(f"<p><strong>Rating:</strong> {movie.vote_average}</p>", unsafe_allow_html=True)
+        st.markdown(f"<p><strong>Vote Count:</strong> {movie.vote_count}</p>", unsafe_allow_html=True)
+        st.markdown(f"<p><strong>Release Date:</strong> {movie.release_date}</p>", unsafe_allow_html=True)
+        st.markdown(f"<p><strong>Director:</strong> {movie.director}</p>", unsafe_allow_html=True)
+        st.markdown(f"<p><strong>Genres:</strong> {movie.genres}</p>", unsafe_allow_html=True)
+    st.markdown("---")
+    st.markdown("### Recommended Movies")
+    rec_df = get_similar_movies(movie.title)
+    display_movies(rec_df)
+    st.markdown("---")
+    st.markdown("### Summary")
+    display_summary_explanation(movie.title)
+    st.markdown("---")
+    st.markdown("### Similarity Visualization")
+    plot_similarities(movie.title)
+    if st.button("Back"):
+        st.session_state.selected_movie = None
 
-# --- SHOW MOVIE DETAILS IF SELECTED ---
-if st.session_state.selected_movie is not None:
+# ----------------- Handle Details View -----------------
+if st.session_state.get("selected_movie"):
     selected_title = st.session_state.selected_movie
     movie_detail = movies_data[movies_data['title'] == selected_title]
     if not movie_detail.empty:
         movie_detail = movie_detail.iloc[0]
-        st.markdown("---")
         display_movie_details(movie_detail)
-        if st.button("Close Details"):
-            st.session_state.selected_movie = None
+else:
+    # ----------------- Main Page Navigation -----------------
+    selected_page = st.sidebar.radio("Navigation", ["Top Rated Movies", "Recommendations", "Insights"])
+
+    if selected_page == "Top Rated Movies":
+        st.title("🔥 Top Voted Movies")
+        top_movies = movies_data.sort_values(by="vote_count", ascending=False).head(40)
+        display_movies(top_movies)
+
+    elif selected_page == "Recommendations":
+        st.title("🎬 Content-Based Recommendations")
+        query = st.text_input("Enter movie name:")
+        if query:
+            movie_titles = movies_data['title'].tolist()
+            best_match_tuple = process.extractOne(query, movie_titles)
+            best_match = best_match_tuple[0] if best_match_tuple else None
+            if best_match:
+                best_match_row = movies_data[movies_data['title'] == best_match]
+                if not best_match_row.empty:
+                    poster_url = best_match_row.iloc[0]['poster_path']
+                    if poster_url:
+                        st.sidebar.image("https://image.tmdb.org/t/p/w500" + poster_url, width=600)
+                st.markdown("### Recommended Movies")
+                rec_df = get_similar_movies(best_match)
+                display_movies(rec_df)
+                st.markdown("---")
+                display_summary_explanation(best_match)
+                st.markdown("---")
+                st.markdown("### Similarity Visualization")
+                plot_similarities(best_match)
+        else:
+            st.markdown("Please enter a movie name above.")
+
+    elif selected_page == "Insights":
+        st.title("📊 Insights")
+        plot_director_votes()
+        plot_yearly_votes()
+        plot_top_movies()
