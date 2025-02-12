@@ -21,6 +21,8 @@ A content-based movie recommendation system that leverages data from the TMDB AP
 
 The Movie Recommendation System is designed to help users discover movies based on content similarity. By processing extensive movie and crew data from the TMDB API and applying advanced natural language processing techniques, the system identifies movies that share similar themes, genres, and directorial styles. Users can search for a movie and receive a list of recommended films along with visual insights and a detailed explanation of why those movies were chosen.
 
+Application: https://movie-recommendation-system-rmpj3xxvdo5rjvbn8s8esm.streamlit.app/
+
 ---
 
 ## Features
@@ -102,6 +104,7 @@ The Movie Recommendation System is designed to help users discover movies based 
    pip install -r requirements.txt
 
    movie-recommender/
+## Project Structure
 ├── app.py           # Main Streamlit application script
 ├── movies.csv       # CSV file containing merged movie and crew data from TMDB
 ├── requirements.txt # List of project dependencies
