@@ -105,9 +105,13 @@ Application: https://movie-recommendation-system-rmpj3xxvdo5rjvbn8s8esm.streamli
 
    movie-recommender/
 ## Project Structure
+
 ├── app.py # Main Streamlit application script
+
 ├── movies.csv # CSV file containing merged movie and crew data from TMDB
+
 ├── requirements.txt # List of project dependencies
+
 └── README.md # Project documentation
 
 
