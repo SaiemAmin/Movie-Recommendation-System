@@ -5,3 +5,4 @@ fuzzywuzzy
 scikit-learn
 numpy
 plotly
+scipy
