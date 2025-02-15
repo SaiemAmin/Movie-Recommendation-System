@@ -147,6 +147,7 @@ def display_movies(movies):
             if st.button("Details", key=f"details_{movie.title}_{idx}"):
                 st.session_state.selected_movie = movie.title
                 st.query_params["dummy"] = str(np.random.randint(0, 100000))
+                st.rerun()
             st.markdown("</div>", unsafe_allow_html=True)
 
 # ----------------- Plot Similarities using Plotly (Optimized Similarity Plot) -----------------
