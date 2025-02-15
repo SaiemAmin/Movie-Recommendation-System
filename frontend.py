@@ -238,14 +238,14 @@ def display_movie_details(movie):
         st.markdown(f"<p><strong>Director:</strong> {movie.director}</p>", unsafe_allow_html=True)
         st.markdown(f"<p><strong>Genres:</strong> {movie.genres}</p>", unsafe_allow_html=True)
     st.markdown("---")
-    st.markdown("### Recommended Movies")
+    st.markdown("<h3 style='color: red;'>Recommended Movies</h3>", unsafe_allow_html=True)
     rec_df = get_similar_movies(movie.title)
     display_movies(rec_df)
     st.markdown("---")
-    st.markdown("### Summary")
+    st.markdown("<h3 style='color: red;'>Summary</h3>", unsafe_allow_html=True)
     display_summary_explanation(movie.title)
     st.markdown("---")
-    st.markdown("### Similarity Visualization")
+    st.markdown("<h3 style='color: red;'>Similarity Visualization</h3>", unsafe_allow_html=True)
     plot_similarities(movie.title)
     if st.button("Back"):
         st.session_state.selected_movie = None
