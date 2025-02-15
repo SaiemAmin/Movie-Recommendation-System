@@ -2,6 +2,7 @@
 
 A content-based movie recommendation system that leverages data from the TMDB API (including over 40K movies and associated crew information) to deliver personalized movie suggestions. The system employs advanced data preprocessing techniques and state-of-the-art similarity measures to identify films that align with users' tastes. The application is built using Python, Streamlit, Plotly, and various data science libraries, and it features a modern, Netflix-inspired UI.
 
+**Application**: https://movie-recommendation-system-rmpj3xxvdo5rjvbn8s8esm.streamlit.app/
 ---
 
 ## Table of Contents
@@ -21,7 +22,6 @@ A content-based movie recommendation system that leverages data from the TMDB AP
 
 The Movie Recommendation System is designed to help users discover movies based on content similarity. By processing extensive movie and crew data from the TMDB API and applying advanced natural language processing techniques, the system identifies movies that share similar themes, genres, and directorial styles. Users can search for a movie and receive a list of recommended films along with visual insights and a detailed explanation of why those movies were chosen.
 
-Application: https://movie-recommendation-system-rmpj3xxvdo5rjvbn8s8esm.streamlit.app/
 ---
 
 ## Features
