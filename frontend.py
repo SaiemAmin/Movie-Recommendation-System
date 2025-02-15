@@ -144,7 +144,7 @@ def display_movies(movies):
                 st.image("https://via.placeholder.com/150", width=150)
             st.markdown(f"<h4 style='margin-bottom:2px;'>{movie.title}</h4>", unsafe_allow_html=True)
             st.write(f"🌟 Rating: {movie.vote_average}")
-            if st.button("Details", key=f"details_{movie.title}_{idx}"):
+            if st.button("Recommend", key=f"details_{movie.title}_{idx}"):
                 st.session_state.selected_movie = movie.title
                 st.query_params["dummy"] = str(np.random.randint(0, 100000))
                 st.rerun()
@@ -281,15 +281,32 @@ else:
                     poster_url = best_match_row.iloc[0]['poster_path']
                     if poster_url:
                         st.sidebar.image("https://image.tmdb.org/t/p/w500" + poster_url, width=600)
-                st.markdown("<h3 style='color: red;'>Recommended Movies</h3>", unsafe_allow_html=True)
-                rec_df = get_similar_movies(best_match)
-                display_movies(rec_df)
-                st.markdown("---")
-                st.markdown("<h3 style='color: red;'>Summary</h3>", unsafe_allow_html=True)
-                display_summary_explanation(best_match)
-                st.markdown("---")
-                st.markdown("<h3 style='color: red;'>Similarity Visualization</h3>", unsafe_allow_html=True)
-                plot_similarities(best_match)
+                    
+                    st.markdown("## Movie Details")
+                    cols = st.columns([1, 2])
+                    with cols[0]:
+                        if best_match_row.iloc[0]['poster_path']:
+                            st.image(f"https://image.tmdb.org/t/p/w500{best_match_row.iloc[0]['poster_path']}", width=300)
+                        else:
+                            st.image("https://via.placeholder.com/300", width=300)
+                    with cols[1]:
+                        st.markdown(f"<h2>{best_match_row.iloc[0]['title']}</h2>", unsafe_allow_html=True)
+                        st.markdown(f"<p><strong>Overview:</strong> {best_match_row.iloc[0]['overview']}</p>", unsafe_allow_html=True)
+                        st.markdown(f"<p><strong>Rating:</strong> {best_match_row.iloc[0]['vote_average']}</p>", unsafe_allow_html=True)
+                        st.markdown(f"<p><strong>Vote Count:</strong> {best_match_row.iloc[0]['vote_count']}</p>", unsafe_allow_html=True)
+                        st.markdown(f"<p><strong>Release Date:</strong> {best_match_row.iloc[0]['release_date']}</p>", unsafe_allow_html=True)
+                        st.markdown(f"<p><strong>Director:</strong> {best_match_row.iloc[0]['director']}</p>", unsafe_allow_html=True)
+                        st.markdown(f"<p><strong>Genres:</strong> {best_match_row.iloc[0]['genres']}</p>", unsafe_allow_html=True)
+                    st.markdown("---")
+                    st.markdown("<h3 style='color: red;'>Recommended Movies</h3>", unsafe_allow_html=True)
+                    rec_df = get_similar_movies(best_match)
+                    display_movies(rec_df)
+                    st.markdown("---")
+                    st.markdown("<h3 style='color: red;'>Summary</h3>", unsafe_allow_html=True)
+                    display_summary_explanation(best_match)
+                    st.markdown("---")
+                    st.markdown("<h3 style='color: red;'>Similarity Visualization</h3>", unsafe_allow_html=True)
+                    plot_similarities(best_match)
         else:
             st.markdown("Please enter a movie name above.")
 
