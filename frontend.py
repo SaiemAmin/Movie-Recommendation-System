@@ -97,6 +97,131 @@ def load_data():
 movies_data = load_data()
 
 # ----------------- Compute TF-IDF and Cosine Similarity -----------------
+import sys
+import streamlit as st
+import pandas as pd
+import matplotlib.pyplot as plt
+from fuzzywuzzy import process
+from sklearn.metrics.pairwise import cosine_similarity
+from sklearn.feature_extraction.text import TfidfVectorizer
+from scipy.sparse import csr_matrix
+import numpy as np
+import plotly.express as px
+
+# ----------------- Page Configuration -----------------
+st.set_page_config(page_title="Movie Recommendation System", layout="wide")
+
+# ----------------- Custom CSS for Netflix-Inspired Theme & Enhanced Sidebar -----------------
+st.markdown(
+    """
+    <style>
+    /* Set the full background to pure black */
+    .stApp {
+        background-color: #000000 !important;
+        color: #FFFFFF !important; /* White text for contrast */
+    }
+
+    /* Centered Movie Card Layout */
+    .movie-card {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start; /* Align items to the left */
+        justify-content: center;
+        text-align: left; /* Left-align text */
+        width: 100%;
+        padding: 10px; /* Add padding for better spacing */
+    }
+
+    /* Movie Title - Truncate Long Titles and Left-Align */
+    .movie-title {
+        display: block;
+        width: 100%;  /* Ensure title takes full width of the card */
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        font-size: 16px;
+        font-weight: bold;
+        margin: 8px 0 5px 0; /* Adjust margin for proper spacing */
+        text-align: left; /* Left-align the title */
+        color: white !important;
+    }
+
+    /* Movie Rating Styling */
+    .movie-rating {
+        color: #FFD700; /* Gold for contrast */
+        font-size: 14px;
+        margin: 5px 0; /* Adjust margin for proper spacing */
+        text-align: left; /* Left-align the rating */
+    }
+
+    /* Recommend Button - Netflix Red */
+    div.stButton > button {
+        background-color: #E50914 !important;  /* Netflix Red */
+        color: white !important;
+        border-radius: 5px;
+        border: none;
+        padding: 8px 12px;
+        font-size: 14px;
+        font-weight: bold;
+        cursor: pointer;
+        display: block;
+        margin: 10px 0; /* Adjust margin for proper spacing */
+        width: 100%; /* Make button full width */
+    }
+
+    /* Hover effect */
+    div.stButton > button:hover {
+        background-color: #b20710 !important;  /* Darker red on hover */
+    }
+
+    /* Sidebar Styling */
+    [data-testid="stSidebar"] {
+        background-color: #141414 !important; /* Netflix Dark Gray */
+        color: white !important;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
+
+
+# ----------------- OS-Based Dimension Settings -----------------
+if sys.platform == 'win32':
+    MATPLOTLIB_FIGSIZE = (8, 6)
+    MATPLOTLIB_DPI = 120
+    PLOTLY_WIDTH = 600
+    PLOTLY_HEIGHT = 400
+else:
+    MATPLOTLIB_FIGSIZE = (4, 3)
+    MATPLOTLIB_DPI = 80
+    PLOTLY_WIDTH = 400
+    PLOTLY_HEIGHT = 250
+
+plt.rcParams.update({'figure.figsize': MATPLOTLIB_FIGSIZE, 'figure.dpi': MATPLOTLIB_DPI})
+
+# ----------------- Data Loading Function -----------------
+@st.cache_data
+def load_data():
+    movies = pd.read_csv('movies.csv')
+    required_cols = [
+        'title', 'overview', 'genres', 'director',
+        'poster_path', 'vote_average', 'vote_count', 'release_date'
+    ]
+    for col in required_cols:
+        if col not in movies.columns:
+            movies[col] = ''
+    movies['combined_features'] = (
+        movies['overview'].fillna('') + ' ' +
+        movies['genres'].fillna('') + ' ' +
+        movies['director'].fillna('')
+    )
+    movies = movies.drop_duplicates(subset='title').reset_index(drop=True)
+    return movies
+
+movies_data = load_data()
+
+# ----------------- Compute TF-IDF and Cosine Similarity -----------------
 @st.cache_data
 def compute_tfidf_and_similarity(data):
     tfidf = TfidfVectorizer(stop_words='english', max_features=10000, min_df = 5, max_df = 0.8)
@@ -134,21 +259,34 @@ def display_movies(movies):
     if num_movies == 0:
         st.write("No movies to display.")
         return
+
     cols = st.columns(min(num_movies, 5))
+
     for idx, movie in enumerate(movies.itertuples()):
         with cols[idx % 5]:
-            st.markdown("<div class='card'>", unsafe_allow_html=True)
+            st.markdown("<div class='movie-card'>", unsafe_allow_html=True)
+
+            # Display movie poster
             if movie.poster_path:
                 st.image(f"https://image.tmdb.org/t/p/w500{movie.poster_path}", width=150)
             else:
                 st.image("https://via.placeholder.com/150", width=150)
-            st.markdown(f"<h4 style='margin-bottom:2px;'>{movie.title}</h4>", unsafe_allow_html=True)
-            st.write(f"🌟 Rating: {movie.vote_average}")
-            if st.button("Recommend", key=f"details_{movie.title}_{idx}"):
+
+            # Properly Centered & Truncated Movie Title
+            st.markdown(f"<div class='movie-title'>{movie.title}</div>", unsafe_allow_html=True)
+
+            # Movie Rating (Gold for contrast)
+            st.markdown(f"<p class='movie-rating'>🌟 <strong>Rating:</strong> {movie.vote_average}</p>", unsafe_allow_html=True)
+
+            # Centered Red Recommend Button
+            if st.button("Details", key=f"recommend_{movie.title}_{idx}"):
                 st.session_state.selected_movie = movie.title
                 st.query_params["dummy"] = str(np.random.randint(0, 100000))
                 st.rerun()
+
             st.markdown("</div>", unsafe_allow_html=True)
+
+
 
 # ----------------- Plot Similarities using Plotly (Optimized Similarity Plot) -----------------
 def plot_similarities(movie_title):
@@ -264,7 +402,7 @@ else:
     selected_page = st.sidebar.radio("Navigation", ["Top Rated Movies", "Recommendations", "Insights"])
 
     if selected_page == "Top Rated Movies":
-        st.title("🔥 Top Voted Movies")
+        st.title("🔥 Top Rated Movies")
         top_movies = movies_data.sort_values(by="vote_count", ascending=False).head(100)
         display_movies(top_movies)
 
