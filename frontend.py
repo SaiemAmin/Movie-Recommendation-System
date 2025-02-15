@@ -99,7 +99,7 @@ movies_data = load_data()
 # ----------------- Compute TF-IDF and Cosine Similarity -----------------
 @st.cache_data
 def compute_tfidf_and_similarity(data):
-    tfidf = TfidfVectorizer(stop_words='english')
+    tfidf = TfidfVectorizer(stop_words='english', max_features=10000, min_df = 5, max_df = 0.8)
     tfidf_matrix = tfidf.fit_transform(data['combined_features'])
     cosine_sim = cosine_similarity(tfidf_matrix, tfidf_matrix)
     return tfidf, tfidf_matrix, cosine_sim
@@ -146,6 +146,7 @@ def display_movies(movies):
             st.write(f"🌟 Rating: {movie.vote_average}")
             if st.button("Details", key=f"details_{movie.title}_{idx}"):
                 st.session_state.selected_movie = movie.title
+                st.query_params["dummy"] = str(np.random.randint(0, 100000))
             st.markdown("</div>", unsafe_allow_html=True)
 
 # ----------------- Plot Similarities using Plotly (Optimized Similarity Plot) -----------------
@@ -247,6 +248,8 @@ def display_movie_details(movie):
     plot_similarities(movie.title)
     if st.button("Back"):
         st.session_state.selected_movie = None
+        st.query_params.clear()
+        st.rerun()
 
 # ----------------- Handle Details View -----------------
 if st.session_state.get("selected_movie"):
