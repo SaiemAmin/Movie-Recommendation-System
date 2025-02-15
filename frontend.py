@@ -10,105 +10,7 @@ import numpy as np
 import plotly.express as px
 
 # ----------------- Page Configuration -----------------
-st.set_page_config(page_title="Movie Recommendation System", layout="wide")
-
-# ----------------- Custom CSS for Netflix-Inspired Theme & Enhanced Sidebar -----------------
-st.markdown(
-    """
-    <style>
-    /* Overall app styling */
-    body {
-        background-color: #000000;
-        color: #E50914;
-    }
-    .stApp {
-        background-color: #000000;
-    }
-    /* Headings */
-    h1, h2, h3, h4, h5, h6 {
-        color: #E50914;
-    }
-    /* Movie cards styling */
-    .card {
-        background-color: #212121;
-        padding: 10px;
-        border-radius: 10px;
-        margin: 10px;
-        text-align: center;
-    }
-    /* Button styling */
-    .stButton button {
-        background-color: #E50914;
-        color: #ffffff;
-        border: none;
-        border-radius: 5px;
-        padding: 5px 10px;
-    }
-    /* Enhanced sidebar styling */
-    [data-testid="stSidebar"] {
-        background: linear-gradient(135deg, #141414, #000000) !important;
-        color: #E50914;
-        font-family: 'Helvetica Neue', sans-serif;
-        padding: 20px;
-    }
-    /* Sidebar header text */
-    [data-testid="stSidebar"] .css-1d391kg {
-        font-size: 18px;
-        font-weight: bold;
-    }
-    </style>
-    """,
-    unsafe_allow_html=True,
-)
-
-# ----------------- OS-Based Dimension Settings -----------------
-if sys.platform == 'win32':
-    MATPLOTLIB_FIGSIZE = (8, 6)
-    MATPLOTLIB_DPI = 120
-    PLOTLY_WIDTH = 600
-    PLOTLY_HEIGHT = 400
-else:
-    MATPLOTLIB_FIGSIZE = (4, 3)
-    MATPLOTLIB_DPI = 80
-    PLOTLY_WIDTH = 400
-    PLOTLY_HEIGHT = 250
-
-plt.rcParams.update({'figure.figsize': MATPLOTLIB_FIGSIZE, 'figure.dpi': MATPLOTLIB_DPI})
-
-# ----------------- Data Loading Function -----------------
-@st.cache_data
-def load_data():
-    movies = pd.read_csv('movies.csv')
-    required_cols = [
-        'title', 'overview', 'genres', 'director',
-        'poster_path', 'vote_average', 'vote_count', 'release_date'
-    ]
-    for col in required_cols:
-        if col not in movies.columns:
-            movies[col] = ''
-    movies['combined_features'] = (
-        movies['overview'].fillna('') + ' ' +
-        movies['genres'].fillna('') + ' ' +
-        movies['director'].fillna('')
-    )
-    movies = movies.drop_duplicates(subset='title').reset_index(drop=True)
-    return movies
-
-movies_data = load_data()
-
-# ----------------- Compute TF-IDF and Cosine Similarity -----------------
-import sys
-import streamlit as st
-import pandas as pd
-import matplotlib.pyplot as plt
-from fuzzywuzzy import process
-from sklearn.metrics.pairwise import cosine_similarity
-from sklearn.feature_extraction.text import TfidfVectorizer
-from scipy.sparse import csr_matrix
-import numpy as np
-import plotly.express as px
-
-# ----------------- Page Configuration -----------------
+# THIS MUST BE THE FIRST STREAMLIT COMMAND
 st.set_page_config(page_title="Movie Recommendation System", layout="wide")
 
 # ----------------- Custom CSS for Netflix-Inspired Theme & Enhanced Sidebar -----------------
@@ -184,8 +86,6 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-
-
 # ----------------- OS-Based Dimension Settings -----------------
 if sys.platform == 'win32':
     MATPLOTLIB_FIGSIZE = (8, 6)
@@ -199,6 +99,7 @@ else:
     PLOTLY_HEIGHT = 250
 
 plt.rcParams.update({'figure.figsize': MATPLOTLIB_FIGSIZE, 'figure.dpi': MATPLOTLIB_DPI})
+
 
 # ----------------- Data Loading Function -----------------
 @st.cache_data
