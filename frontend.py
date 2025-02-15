@@ -281,13 +281,14 @@ else:
                     poster_url = best_match_row.iloc[0]['poster_path']
                     if poster_url:
                         st.sidebar.image("https://image.tmdb.org/t/p/w500" + poster_url, width=600)
-                st.markdown("### Recommended Movies")
+                st.markdown("<h3 style='color: red;'>Recommended Movies</h3>", unsafe_allow_html=True)
                 rec_df = get_similar_movies(best_match)
                 display_movies(rec_df)
                 st.markdown("---")
+                st.markdown("<h3 style='color: red;'>Summary</h3>", unsafe_allow_html=True)
                 display_summary_explanation(best_match)
                 st.markdown("---")
-                st.markdown("### Similarity Visualization")
+                st.markdown("<h3 style='color: red;'>Similarity Visualization</h3>", unsafe_allow_html=True)
                 plot_similarities(best_match)
         else:
             st.markdown("Please enter a movie name above.")
@@ -298,4 +299,3 @@ else:
         plot_top_actors()
         plot_yearly_votes()
         plot_regions()
-    
