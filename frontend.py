@@ -226,7 +226,7 @@ def display_summary_explanation(selected_title):
 # ----------------- Insights Plots using Plotly -----------------
 def plot_director_votes():
     director_votes = movies_data.groupby("director")["vote_count"].sum().reset_index()
-    top_directors = director_votes.sort_values(by="vote_count", ascending=False).head(10)
+    top_directors = director_votes.sort_values(by="vote_count", ascending=False).head(15)
     fig = px.bar(top_directors, x="vote_count", y="director", orientation="h", color_discrete_sequence= ["red"],
                  title="Top Directors in the industry", height=PLOTLY_HEIGHT, width=PLOTLY_WIDTH)
     fig.update_yaxes(autorange="reversed")
@@ -305,7 +305,7 @@ def genre_recommendations():
         
         # Filter movies by selected genre and sort by vote_average
         filtered_movies = movies_data_cleaned[movies_data_cleaned['genres'].str.contains(selected_genre, case=False)]
-        top_movies = filtered_movies.sort_values(by='vote_average', ascending=False).head(10)
+        top_movies = filtered_movies.sort_values(by='vote_average', ascending=False).head(25)
         
         if not top_movies.empty:
             st.write(f"**Top Voted Movies in '{selected_genre}' Genre:**")
