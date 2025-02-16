@@ -297,7 +297,7 @@ def genre_recommendations():
     
     # Dropdown for genre selection
     genres = get_unique_genres(movies_data)
-    selected_genre = st.selectbox("Select a Genre", genres)
+    selected_genre = st.selectbox("What are you in the mood for today?", genres)
     
     if selected_genre:
         # Remove rows with NA values in the genres column
