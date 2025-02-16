@@ -291,6 +291,59 @@ def display_movie_details(movie):
         st.query_params.clear()
         st.rerun()
 
+# ----------------- Genre Recommendations Page -----------------
+def genre_recommendations():
+    st.title("🎬 Genre Recommendations")
+    
+    # Dropdown for genre selection
+    genres = get_unique_genres(movies_data)
+    selected_genre = st.selectbox("Select a Genre", genres)
+    
+    if selected_genre:
+        # Remove rows with NA values in the genres column
+        movies_data_cleaned = movies_data.dropna(subset=['genres'])
+        
+        # Filter movies by selected genre and sort by vote_average
+        filtered_movies = movies_data_cleaned[movies_data_cleaned['genres'].str.contains(selected_genre, case=False)]
+        top_movies = filtered_movies.sort_values(by='vote_average', ascending=False).head(10)
+        
+        if not top_movies.empty:
+            st.write(f"**Top Voted Movies in '{selected_genre}' Genre:**")
+            cols = st.columns(min(len(top_movies), 5))
+            for idx, movie in enumerate(top_movies.itertuples()):
+                with cols[idx % 5]:
+                    st.markdown("<div class='movie-card'>", unsafe_allow_html=True)
+                    
+                    # Display movie poster
+                    if movie.poster_path:
+                        st.image(f"https://image.tmdb.org/t/p/w500{movie.poster_path}", width=150)
+                    else:
+                        st.image("https://via.placeholder.com/150", width=150)
+                    
+                    # Truncate the title if it's too long
+                    max_title_length = 20  # Adjust this value as needed
+                    truncated_title = (movie.title[:max_title_length] + '...') if len(movie.title) > max_title_length else movie.title
+                    
+                    # Display truncated title
+                    st.markdown(f"<div class='movie-title'>{truncated_title}</div>", unsafe_allow_html=True)
+                    
+                    # Display rating
+                    st.markdown(f"<p class='movie-rating'>🌟 <strong>Rating:</strong> {movie.vote_average}</p>", unsafe_allow_html=True)
+                    
+                    # Centered Details button
+                    if st.button("Details", key=f"details_{movie.title}_{idx}"):
+                        st.session_state.selected_movie = movie.title
+                        st.query_params["dummy"] = str(np.random.randint(0, 100000))
+                        st.rerun()
+                    
+                    st.markdown("</div>", unsafe_allow_html=True)
+        else:
+            st.write(f"No movies found in the '{selected_genre}' genre.")
+def get_unique_genres(data):
+    genres = data['genres'].str.split(',').explode().dropna().unique()
+    genres = [genre for genre in genres if isinstance(genre, str)]
+    return sorted(genres)
+
 # ----------------- Handle Details View -----------------
 if st.session_state.get("selected_movie"):
     selected_title = st.session_state.selected_movie
@@ -300,7 +353,7 @@ if st.session_state.get("selected_movie"):
         display_movie_details(movie_detail)
 else:
     # ----------------- Main Page Navigation -----------------
-    selected_page = st.sidebar.radio("Navigation", ["Top Rated Movies", "Recommendations", "Insights"])
+    selected_page = st.sidebar.radio("Navigation", ["Top Rated Movies", "Recommendations", "Genre Recommendations","Insights"])
 
     if selected_page == "Top Rated Movies":
         st.title("🔥 Top Rated Movies")
@@ -348,6 +401,9 @@ else:
                     plot_similarities(best_match)
         else:
             st.markdown("Please enter a movie name above.")
+        
+    elif selected_page == "Genre Recommendations":
+        genre_recommendations()
 
     elif selected_page == "Insights":
         st.title("📊 Insights")
