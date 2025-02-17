@@ -305,10 +305,10 @@ def genre_recommendations():
         
         # Filter movies by selected genre and sort by vote_average
         filtered_movies = movies_data_cleaned[movies_data_cleaned['genres'].str.contains(selected_genre, case=False)]
-        top_movies = filtered_movies.sort_values(by='vote_average', ascending=False).head(25)
+        top_movies = filtered_movies.sort_values(by='vote_average', ascending=False).head(50)
         
         if not top_movies.empty:
-            st.write(f"**Top Voted Movies in '{selected_genre}' Genre:**")
+            st.write(f"**Top 50 Movies in '{selected_genre}' Genre:**")
             cols = st.columns(min(len(top_movies), 5))
             for idx, movie in enumerate(top_movies.itertuples()):
                 with cols[idx % 5]:
