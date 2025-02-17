@@ -280,7 +280,7 @@ def display_movie_details(movie):
         st.markdown(f"<p><strong>Overview:</strong> {movie.overview}</p>", unsafe_allow_html=True)
         st.markdown(f"<p><strong>Rating:</strong> {movie.vote_average}</p>", unsafe_allow_html=True)
         st.markdown(f"<p><strong>Vote Count:</strong> {movie.vote_count}</p>", unsafe_allow_html=True)
-        st.markdown(f"<p><strong>Release Date:</strong> {movie.release_date}</p>", unsafe_allow_html=True)
+        st.markdown(f"<p><strong>Release Date:</strong> {round(movie.release_year)}</p>", unsafe_allow_html=True)
         st.markdown(f"<p><strong>Director:</strong> {movie.director}</p>", unsafe_allow_html=True)
         st.markdown(f"<p><strong>Genres:</strong> {movie.genres}</p>", unsafe_allow_html=True)
     st.markdown("---")
