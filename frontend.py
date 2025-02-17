@@ -259,6 +259,13 @@ def plot_regions():
     fig.update_xaxes(tickangle=45)
     st.plotly_chart(fig, use_container_width=True)
 
+def plot_genres():
+    genres = movies_data['genres'].str.split(",").explode().value_counts()
+    fig = px.bar(genres, x=genres.index, y=genres.values, title="Most watched Genres",
+                    height=PLOTLY_HEIGHT, width=PLOTLY_WIDTH, color_discrete_sequence=["red"])
+    fig.update_xaxes(tickangle=45)
+    st.plotly_chart(fig, use_container_width=True)
+
 # ----------------- Display Movie Details (Netflix-Inspired Layout) -----------------
 def display_movie_details(movie):
     st.markdown("## Movie Details")
@@ -411,5 +418,6 @@ else:
         st.title("📊 Insights")
         plot_director_votes()
         plot_top_actors()
+        plot_genres()
         plot_yearly_votes()
         plot_regions()
