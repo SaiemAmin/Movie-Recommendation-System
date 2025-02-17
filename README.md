@@ -29,6 +29,9 @@ The Movie Recommendation System is designed to help users discover movies based 
 - **Content-Based Recommendations:**  
   Utilizes TF-IDF vectorization and cosine similarity to recommend movies that are textually similar based on overviews, genres, and director information.
 
+  **Genre-Based Recommendation:**:
+  Provides users a select-box of genres which recommends top 50 movies based on the genre they select.
+
 - **Fuzzy Matching Search:**  
   Implements fuzzy string matching to handle imperfect user inputs, ensuring the best possible match is found even if there are typos.
 
