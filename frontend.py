@@ -339,6 +339,8 @@ def genre_recommendations():
                     st.markdown("</div>", unsafe_allow_html=True)
         else:
             st.write(f"No movies found in the '{selected_genre}' genre.")
+            
+@st.cache_data
 def get_unique_genres(data):
     genres = data['genres'].str.split(',').explode().dropna().unique()
     genres = [genre for genre in genres if isinstance(genre, str)]
