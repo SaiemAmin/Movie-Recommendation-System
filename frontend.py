@@ -304,15 +304,19 @@ def display_movie_details(movie):
 def genre_recommendations():
     st.title("🎬 Genre Recommendations")
     
-    # Dropdown for genre selection
     genres = get_unique_genres(movies_data)
-    selected_genre = st.selectbox("Select a Genre", genres)
+    # Use the previously selected genre from session state if available
+    default_genre = st.session_state.get('prev_genre', genres[0])
+    # Find the index of the default genre in the genres list
+    default_index = genres.index(default_genre) if default_genre in genres else 0
+    
+    selected_genre = st.selectbox("Select a Genre", genres, index=default_index, key="genre_select")
     
     if selected_genre:
-        # Remove rows with NA values in the genres column
-        movies_data_cleaned = movies_data.dropna(subset=['genres'])
+        # Save the current selection so it persists when navigating back
+        st.session_state['prev_genre'] = selected_genre
         
-        # Filter movies by selected genre and sort by vote_average
+        movies_data_cleaned = movies_data.dropna(subset=['genres'])
         filtered_movies = movies_data_cleaned[movies_data_cleaned['genres'].str.contains(selected_genre, case=False)]
         top_movies = filtered_movies.sort_values(by='vote_average', ascending=False).head(50)
         
@@ -330,17 +334,16 @@ def genre_recommendations():
                         st.image("https://via.placeholder.com/150", width=150)
                     
                     # Truncate the title if it's too long
-                    max_title_length = 20  # Adjust this value as needed
+                    max_title_length = 20
                     truncated_title = (movie.title[:max_title_length] + '...') if len(movie.title) > max_title_length else movie.title
                     
-                    # Display truncated title
                     st.markdown(f"<div class='movie-title'>{truncated_title}</div>", unsafe_allow_html=True)
-                    
-                    # Display rating
                     st.markdown(f"<p class='movie-rating'>🌟 <strong>Rating:</strong> {movie.vote_average}</p>", unsafe_allow_html=True)
                     
+                    # Save the selected genre along with the page info before going to Details
                     if st.button("Details", key=f"details_{movie.title}_{idx}"):
-                        st.session_state["prev_page"] = st.session_state.get("selected_page", "Top Rated Movies")
+                        st.session_state["prev_page"] = st.session_state.get("selected_page", "Genre Recommendations")
+                        st.session_state["prev_genre"] = selected_genre
                         st.session_state["selected_movie"] = movie.title
                         st.rerun()
                     
@@ -368,7 +371,7 @@ else:
 
     if selected_page == "Top Rated Movies":
         st.title("🔥 Top Rated Movies")
-        top_movies = movies_data.sort_values(by="vote_count", ascending=False).head(25)
+        top_movies = movies_data.sort_values(by="vote_count", ascending=False).head(20)
         display_movies(top_movies)
 
     elif selected_page == "Recommendations":
