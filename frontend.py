@@ -226,7 +226,7 @@ def display_summary_explanation(selected_title):
 # ----------------- Insights Plots using Plotly -----------------
 def plot_director_votes():
     director_votes = movies_data.groupby("director")["vote_count"].sum().reset_index()
-    top_directors = director_votes.sort_values(by="vote_count", ascending=False).head(15)
+    top_directors = director_votes.sort_values(by="vote_count", ascending=False).head(10)
     fig = px.bar(top_directors, x="vote_count", y="director", orientation="h", color_discrete_sequence= ["red"],
                  title="Top Directors in the industry", height=PLOTLY_HEIGHT, width=PLOTLY_WIDTH)
     fig.update_yaxes(autorange="reversed")
@@ -295,7 +295,9 @@ def display_movie_details(movie):
     plot_similarities(movie.title)
     if st.button("Back"):
         st.session_state.selected_movie = None
-        st.query_params.clear()
+        # Restore the previous page if it exists
+        if "prev_page" in st.session_state:
+            st.session_state.selected_page = st.session_state.prev_page
         st.rerun()
 
 # ----------------- Genre Recommendations Page -----------------
@@ -304,7 +306,7 @@ def genre_recommendations():
     
     # Dropdown for genre selection
     genres = get_unique_genres(movies_data)
-    selected_genre = st.selectbox("What are you in the mood for today?", genres)
+    selected_genre = st.selectbox("Select a Genre", genres)
     
     if selected_genre:
         # Remove rows with NA values in the genres column
@@ -315,7 +317,7 @@ def genre_recommendations():
         top_movies = filtered_movies.sort_values(by='vote_average', ascending=False).head(50)
         
         if not top_movies.empty:
-            st.write(f"**Top 50 Movies in '{selected_genre}' Genre:**")
+            st.write(f"**Top Voted Movies in '{selected_genre}' Genre:**")
             cols = st.columns(min(len(top_movies), 5))
             for idx, movie in enumerate(top_movies.itertuples()):
                 with cols[idx % 5]:
@@ -337,16 +339,15 @@ def genre_recommendations():
                     # Display rating
                     st.markdown(f"<p class='movie-rating'>🌟 <strong>Rating:</strong> {movie.vote_average}</p>", unsafe_allow_html=True)
                     
-                    # Centered Details button
                     if st.button("Details", key=f"details_{movie.title}_{idx}"):
-                        st.session_state.selected_movie = movie.title
-                        st.query_params["dummy"] = str(np.random.randint(0, 100000))
+                        st.session_state["prev_page"] = st.session_state.get("selected_page", "Top Rated Movies")
+                        st.session_state["selected_movie"] = movie.title
                         st.rerun()
                     
                     st.markdown("</div>", unsafe_allow_html=True)
         else:
             st.write(f"No movies found in the '{selected_genre}' genre.")
-            
+
 @st.cache_data
 def get_unique_genres(data):
     genres = data['genres'].str.split(',').explode().dropna().unique()
@@ -362,7 +363,8 @@ if st.session_state.get("selected_movie"):
         display_movie_details(movie_detail)
 else:
     # ----------------- Main Page Navigation -----------------
-    selected_page = st.sidebar.radio("Navigation", ["Top Rated Movies", "Recommendations", "Genre Recommendations","Insights"])
+    selected_page = st.sidebar.radio("Navigation", ["Top Rated Movies", "Recommendations", "Genre Recommendations","Insights"],
+                                     key = "selected_page")
 
     if selected_page == "Top Rated Movies":
         st.title("🔥 Top Rated Movies")
@@ -418,6 +420,9 @@ else:
         st.title("📊 Insights")
         plot_director_votes()
         plot_top_actors()
+        plot_genres()
+        plot_yearly_votes()
+        plot_regions()
         plot_genres()
         plot_yearly_votes()
         plot_regions()
