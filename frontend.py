@@ -368,7 +368,7 @@ else:
 
     if selected_page == "Top Rated Movies":
         st.title("🔥 Top Rated Movies")
-        top_movies = movies_data.sort_values(by="vote_count", ascending=False).head(100)
+        top_movies = movies_data.sort_values(by="vote_count", ascending=False).head(25)
         display_movies(top_movies)
 
     elif selected_page == "Recommendations":
